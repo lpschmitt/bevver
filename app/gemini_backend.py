@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import tempfile
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -213,19 +214,35 @@ def extract_fields(image_bytes: bytes, mime_type: str = "image/jpeg") -> GeminiE
     from google.genai import types
 
     client = _get_client()
-    resp = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=[
-            types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-            _PROMPT,
-        ],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=_RESPONSE_SCHEMA,
-            temperature=0.0,
-        ),
-    )
-    result = _parse(resp.text)
+    last_exc: Exception | None = None
+    for attempt in range(4):
+        if attempt:
+            delay = 2 ** attempt
+            log.warning("Gemini transient error, retry %d/3 in %ds…", attempt, delay)
+            time.sleep(delay)
+        try:
+            resp = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=[
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                    _PROMPT,
+                ],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=_RESPONSE_SCHEMA,
+                    temperature=0.0,
+                ),
+            )
+            result = _parse(resp.text)
+            break
+        except Exception as exc:
+            status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+            if status in (429, 503):
+                last_exc = exc
+                continue
+            raise
+    else:
+        raise last_exc  # type: ignore[misc]
     _cache_store(key, result)
     return result
 
