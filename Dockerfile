@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY scripts/ ./scripts/
 COPY test_images/ ./test_images/
+COPY Reference/ ./Reference/
 
 # HuggingFace Spaces routes to port 7860; default uvicorn elsewhere can override.
 ENV PORT=7860
