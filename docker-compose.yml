@@ -1,0 +1,17 @@
+# Local run / backup deploy. `docker compose up` then open http://localhost:8000
+services:
+  verifier:
+    build: .
+    image: ttb-label-verifier:latest
+    ports:
+      - "8000:7860"
+    environment:
+      - PORT=7860
+      - OCR_BACKEND=paddle
+    # PaddleOCR (mkldnn) peaks ~2-3 GB during inference; a 4 GB cap OOM-kills the
+    # worker on larger images. Give it room (host Docker VM has ~7.75 GiB).
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+    restart: unless-stopped

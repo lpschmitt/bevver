@@ -1,0 +1,357 @@
+/* Single-screen UI for low-tech-comfort users:
+   large controls, high contrast, labelled buttons, no modals, no hidden icons. */
+
+:root {
+  --navy: #112e51;        /* US gov palette */
+  --blue: #205493;
+  --blue-dark: #1a4480;
+  --gray-light: #f1f3f6;
+  --gray-border: #c9ced6;
+  --green: #2e8540;
+  --green-bg: #e7f4e4;
+  --amber: #b8860b;
+  --amber-bg: #fef6e0;
+  --red: #cd2026;
+  --red-bg: #f9dede;
+  --text: #1b1b1b;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Source Sans Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text);
+  background: #fff;
+}
+
+.site-header {
+  background: var(--navy);
+  color: #fff;
+}
+.header-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+}
+.site-header h1 { margin: 0; font-size: 1.8rem; }
+.tagline { margin: .35rem 0 0; color: #d6e3f0; font-size: 1rem; }
+.tabs {
+  display: flex;
+  gap: .25rem;
+  margin: 1rem 0 -1.5rem;
+}
+.tab {
+  padding: .55rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d6e3f0;
+  text-decoration: none;
+  background: rgba(255, 255, 255, .08);
+  border-radius: 6px 6px 0 0;
+}
+.tab:hover { background: rgba(255, 255, 255, .18); color: #fff; }
+.tab[aria-current="page"] { background: #fff; color: var(--navy); }
+
+main { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+h2 { font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
+
+/* Section heading with an action flush-right on the same line. */
+.section-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  margin: 1.75rem 0 .75rem;
+}
+.section-heading h2 { margin: 0; }
+.btn-small { font-size: .95rem; padding: .5rem 1rem; }
+
+/* Dropzone ----------------------------------------------------------------- */
+.dropzone {
+  border: 3px dashed var(--gray-border);
+  border-radius: var(--radius);
+  background: var(--gray-light);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+  cursor: pointer;
+}
+.dropzone.dragover { border-color: var(--blue); background: #e6eef7; }
+.dropzone:focus-visible { outline: 4px solid var(--blue); outline-offset: 2px; }
+.dropzone-main { font-size: 1.2rem; font-weight: 600; margin: 0 0 .25rem; }
+.dropzone-sub { margin: 0 0 1rem; color: #4a4a4a; }
+.file-name { margin: 1rem 0 0; font-weight: 600; color: var(--blue-dark); }
+
+/* In-box thumbnail once a label image is chosen. */
+.dz-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  margin: 0 auto 1rem;
+  border: 1px solid var(--gray-border);
+  border-radius: var(--radius);
+  background: #fff;
+  object-fit: contain;
+}
+.dropzone.has-preview { background: #fff; }
+/* The "drag & drop / JPG, PNG or PDF" prompt is redundant once a preview shows. */
+.dropzone.has-preview .dropzone-main,
+.dropzone.has-preview .dropzone-sub { display: none; }
+
+/* Front + back side by side; stacks on narrow screens. */
+.dropzone-pair { display: flex; gap: 1rem; flex-wrap: wrap; }
+.dropzone-col { flex: 1 1 280px; }
+.dz-title { margin: 0 0 .4rem; font-size: 1.05rem; }
+.dz-title .optional { font-weight: 400; color: #4a4a4a; font-size: .9rem; }
+.hint { color: #4a4a4a; margin: 0 0 1rem; }
+
+/* Uploaded label previews on the results page: front and back side by side,
+   sharing the row and scaling down rather than wrapping onto two rows. */
+.label-images { display: flex; gap: 1.25rem; align-items: flex-start; margin: 0 0 1.5rem; }
+.label-fig { margin: 0; flex: 1 1 0; min-width: 0; }
+.label-fig figcaption { font-weight: 700; margin-bottom: .4rem; }
+.label-fig img {
+  display: block;
+  width: 100%; max-width: 360px; max-height: 360px; object-fit: contain;
+  border: 1px solid var(--gray-border); border-radius: var(--radius);
+  background: var(--gray-light);
+}
+
+/* Form --------------------------------------------------------------------- */
+.app-form { display: flex; flex-direction: column; gap: 1rem; }
+.field-row { display: flex; flex-direction: column; gap: .35rem; }
+.field-row label { font-weight: 600; }
+.field-row input {
+  font-size: 1.1rem;
+  padding: .7rem .75rem;
+  border: 2px solid var(--gray-border);
+  border-radius: var(--radius);
+}
+.field-row input:focus { outline: 3px solid var(--blue); border-color: var(--blue); }
+
+/* Buttons ------------------------------------------------------------------ */
+.actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.25rem; }
+.btn {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: .85rem 1.6rem;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.btn:focus-visible { outline: 4px solid var(--amber); outline-offset: 2px; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--blue-dark); }
+.btn-secondary { background: #fff; color: var(--blue-dark); border-color: var(--blue); }
+.btn-secondary:hover { background: var(--gray-light); }
+
+/* "Load sample" type menu — a select styled like a secondary button. */
+.sample-select { cursor: pointer; padding-right: 2.4rem; }
+
+/* Processing --------------------------------------------------------------- */
+#processing-state { text-align: center; padding: 3rem 1rem; }
+.processing-text { font-size: 1.3rem; font-weight: 600; margin-top: 1rem; }
+.spinner {
+  width: 56px; height: 56px; margin: 0 auto;
+  border: 6px solid var(--gray-border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results ------------------------------------------------------------------ */
+.summary {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border-left: 8px solid var(--blue);
+  background: var(--gray-light);
+}
+.summary.all-clear { border-left-color: var(--green); background: var(--green-bg); }
+.summary.needs-review { border-left-color: var(--amber); background: var(--amber-bg); }
+.timing { color: #4a4a4a; margin: .5rem 0 1.25rem; display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.timing-stat { white-space: nowrap; }
+.timing-label { color: #4a4a4a; }
+.timing-stat strong { color: var(--text); }
+
+.results-table { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+.results-table th, .results-table td {
+  text-align: left; padding: .75rem .6rem; border-bottom: 1px solid var(--gray-border);
+  vertical-align: top;
+}
+.results-table th { background: var(--navy); color: #fff; font-size: .95rem; }
+.results-table td { font-size: 1rem; }
+
+/* Verdict pills: word + symbol + colour (never colour alone). */
+.verdict { display: inline-block; font-weight: 700; padding: .25rem .6rem;
+           border-radius: 999px; white-space: nowrap; }
+.verdict-match { background: var(--green-bg); color: var(--green); }
+.verdict-match_normalized { background: var(--green-bg); color: var(--green); }
+.verdict-mismatch { background: var(--red-bg); color: var(--red); }
+.verdict-missing { background: var(--red-bg); color: var(--red); }
+/* Partial match: only part of the name matches -> yellow caution, "?" symbol. */
+.verdict-partial_match { background: #fff3cd; color: #8a6d00; }
+/* Not found = a required value genuinely missing -> red, but keep the ⚠ triangle
+   (not the ✗) so it's distinct from a value-mismatch at a glance. */
+.verdict-not_found { background: #fff3cd; color: #8a6d00; }
+.verdict-not_applicable { background: #e9ecef; color: #4a4a4a; }
+/* "Assumed": read off the label but not in the form — yellow (caution). */
+.verdict-assumed { background: #fff3cd; color: #8a6d00; }
+
+/* "Processing": an in-progress state, not an error — show an animated light-blue
+   bar that fills up, instead of a red pill. */
+.proc-bar {
+  width: 120px; max-width: 60%; height: 8px;
+  background: #dbe7f3;            /* light track */
+  border-radius: 999px;
+  overflow: hidden;
+}
+.proc-bar-fill {
+  height: 100%; width: 0;
+  background: #6aa9e0;            /* light blue */
+  border-radius: 999px;
+  animation: proc-fill 1.3s ease-in-out infinite;
+}
+@keyframes proc-fill {
+  0%   { width: 0;    opacity: 1; }
+  80%  { width: 100%; opacity: 1; }
+  100% { width: 100%; opacity: 0; }   /* fade, then restart from empty (invisible) */
+}
+@media (prefers-reduced-motion: reduce) {
+  .proc-bar-fill { animation: none; width: 60%; opacity: 1; }
+}
+
+/* "Treated as: <class>" chip — which class ruleset was applied. */
+.bev-chip {
+  display: inline-block;
+  margin: .5rem 0 0;
+  padding: .25rem .7rem;
+  font-size: .9rem; font-weight: 700;
+  color: var(--navy);
+  background: #e6eef7;
+  border: 1px solid var(--gray-border);
+  border-radius: 999px;
+}
+
+/* Batch drill-down: expandable rows + nested per-field detail table --------- */
+.row-expandable { cursor: pointer; }
+.row-expandable:hover { background: var(--gray-light); }
+.row-expandable:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
+.drill-caret { color: var(--blue-dark); font-weight: 700; }
+
+.detail-row > td { background: var(--gray-light); padding: .5rem .75rem 1rem; }
+
+/* Detail layout: label image beside the per-field table. */
+.detail-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.detail-thumbs { display: flex; flex-direction: column; gap: .75rem; flex: 0 0 auto; }
+.detail-thumb { margin: 0; flex: 0 0 auto; }
+.detail-thumb img {
+  display: block;
+  width: 200px; max-width: 40vw; max-height: 240px;
+  object-fit: contain;
+  border: 1px solid var(--gray-border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+.detail-thumb figcaption { font-weight: 700; font-size: .85rem; margin-top: .3rem; }
+.detail-content { flex: 1 1 320px; min-width: 0; }
+
+.detail-table { margin: 0; background: #fff; }
+.detail-table th { background: var(--blue-dark); font-size: .85rem; }
+.detail-table td { font-size: .95rem; }
+/* Per-entry debugging links (top-right of an expanded detail / results view). */
+.entry-links {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: .6rem;
+}
+.entry-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--blue);
+  text-decoration: none;
+}
+.entry-link:hover,
+.entry-link:focus-visible { text-decoration: underline; }
+.entry-link.is-open { text-decoration: underline; }
+
+/* "Patterns & text" panel: generated regex per field + the OCR label text. */
+.pattern-panel {
+  margin-top: .9rem;
+  padding: .75rem .9rem;
+  background: #fff;
+  border: 1px solid var(--gray-border);
+  border-radius: var(--radius);
+}
+.pattern-h { margin: .4rem 0 .35rem; font-size: .95rem; color: var(--blue-dark); }
+.pattern-h:first-child { margin-top: 0; }
+.pattern-list { margin: 0 0 .5rem; }
+.pattern-list dt { font-weight: 700; font-size: .85rem; margin-top: .4rem; }
+.pattern-list dd { margin: .1rem 0 0; }
+.pattern-list code,
+.pattern-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .82rem;
+}
+.pattern-list code {
+  display: block;
+  padding: .35rem .5rem;
+  background: var(--gray-light);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.pattern-text {
+  margin: 0;
+  padding: .5rem .6rem;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--gray-light);
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detail-note { margin: .5rem .25rem; font-weight: 600; color: #4a4a4a; }
+.detail-note-warn {
+  color: var(--text);
+  background: var(--amber-bg);
+  border-left: 6px solid var(--amber);
+  border-radius: var(--radius);
+  padding: .6rem .8rem;
+}
+
+/* Errors ------------------------------------------------------------------- */
+.error-banner {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--red-bg);
+  border-left: 8px solid var(--red);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.site-footer { border-top: 1px solid var(--gray-border); padding: 1.25rem;
+               text-align: center; color: #4a4a4a; font-size: .9rem; }
+
+@media (max-width: 640px) {
+  .results-table thead { display: none; }
+  .results-table, .results-table tbody, .results-table tr, .results-table td { display: block; width: 100%; }
+  .results-table tr { border: 1px solid var(--gray-border); border-radius: var(--radius);
+                      margin-bottom: 1rem; padding: .5rem; }
+  .results-table td { border: none; padding: .35rem .5rem; }
+  .results-table td::before { content: attr(data-label); font-weight: 700; display: block; }
+}

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TTB Label Verifier</title>
+  <link rel="stylesheet" href="/style.css?v=27" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Label Verification Tool</h1>
+      <p class="tagline">US Treasury Take-Home Project: Alcohol Label Verifier submitted by Lauren Schmitt</p>
+      <nav class="tabs" aria-label="Verification mode">
+        <a href="/" class="tab" aria-current="page">Single label</a>
+        <a href="/batch.html" class="tab">Batch</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- STATE 1: UPLOAD ------------------------------------------------- -->
+    <section id="upload-state" aria-labelledby="upload-heading">
+      <h2 id="upload-heading">Step 1 — Choose the label images</h2>
+      <p class="hint">Upload the front of the label. If the warning or alcohol
+        content is on the back, add the back image too.</p>
+
+      <div class="dropzone-pair">
+        <div class="dropzone-col">
+          <h3 class="dz-title">Front label</h3>
+          <div id="dropzone-front" class="dropzone" tabindex="0" role="button"
+               aria-label="Drag and drop the front label image here, or activate to choose a file">
+            <p class="dropzone-main">Drag &amp; drop the front here</p>
+            <p class="dropzone-sub">JPG, PNG or PDF</p>
+            <img class="dz-preview" alt="" hidden />
+            <button type="button" class="btn btn-secondary dz-choose">Choose a file</button>
+            <input type="file" class="dz-input" accept=".jpg,.jpeg,.png,.pdf,.gif,.bmp,.tif,.tiff" hidden />
+            <p class="file-name dz-name" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="dropzone-col">
+          <h3 class="dz-title">Back label <span class="optional">(optional)</span></h3>
+          <div id="dropzone-back" class="dropzone" tabindex="0" role="button"
+               aria-label="Drag and drop the back label image here, or activate to choose a file">
+            <p class="dropzone-main">Drag &amp; drop the back here</p>
+            <p class="dropzone-sub">JPG, PNG or PDF</p>
+            <img class="dz-preview" alt="" hidden />
+            <button type="button" class="btn btn-secondary dz-choose">Choose a file</button>
+            <input type="file" class="dz-input" accept=".jpg,.jpeg,.png,.pdf,.gif,.bmp,.tif,.tiff" hidden />
+            <p class="file-name dz-name" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-heading">
+        <h2>Step 2 — Enter the application data</h2>
+      </div>
+      <form id="application-form" class="app-form">
+        <div class="field-row">
+          <label for="brand_name">Brand name</label>
+          <input type="text" id="brand_name" name="brand_name" autocomplete="off" />
+        </div>
+        <div class="field-row">
+          <label for="class_type">Class / type</label>
+          <input type="text" id="class_type" name="class_type" autocomplete="off" />
+        </div>
+        <div class="field-row">
+          <label for="abv">Alcohol content (ABV %)</label>
+          <input type="text" id="abv" name="abv" inputmode="decimal" autocomplete="off" />
+        </div>
+        <div class="field-row">
+          <label for="net_contents">Net contents</label>
+          <input type="text" id="net_contents" name="net_contents" autocomplete="off" />
+        </div>
+        <div class="field-row">
+          <label for="country_of_origin">Country of origin</label>
+          <input type="text" id="country_of_origin" name="country_of_origin" autocomplete="off" />
+        </div>
+
+        <div class="actions">
+          <select id="load-sample-select" class="btn btn-secondary sample-select"
+                  aria-label="Load a sample label by alcohol type, or a random one">
+            <option value="" selected disabled>Load sample…</option>
+            <optgroup label="Representative sample">
+              <option value="spirits">Spirits</option>
+              <option value="wine">Wine</option>
+              <option value="beer">Beer</option>
+            </optgroup>
+            <optgroup label="Random sample">
+              <option value="random-spirits">Random spirits</option>
+              <option value="random-wine">Random wine</option>
+              <option value="random-beer">Random beer</option>
+            </optgroup>
+          </select>
+          <button type="submit" id="verify-btn" class="btn btn-primary">Verify Label</button>
+        </div>
+      </form>
+
+      <p id="upload-error" class="error-banner" role="alert" hidden></p>
+    </section>
+
+    <!-- STATE 2: PROCESSING --------------------------------------------- -->
+    <section id="processing-state" hidden aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="processing-text">Reading label…</p>
+    </section>
+
+    <!-- STATE 3: RESULTS ------------------------------------------------ -->
+    <section id="results-state" hidden aria-labelledby="results-heading">
+      <h2 id="results-heading">Verification result</h2>
+
+      <div id="result-actions" class="entry-links"></div>
+      <div id="result-pattern-panel" hidden></div>
+
+      <div id="overall-summary" class="summary"></div>
+      <p id="beverage-class" class="bev-chip" hidden></p>
+      <p id="timing" class="timing"></p>
+
+      <div id="label-images" class="label-images" hidden>
+        <figure class="label-fig">
+          <figcaption>Front label</figcaption>
+          <img id="front-preview" alt="Front label image" />
+        </figure>
+        <figure class="label-fig" id="back-fig" hidden>
+          <figcaption>Back label</figcaption>
+          <img id="back-preview" alt="Back label image" />
+        </figure>
+      </div>
+
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Expected (application)</th>
+            <th scope="col">Found on label</th>
+            <th scope="col">Result</th>
+            <th scope="col">Note</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+
+      <div class="actions">
+        <button type="button" id="reset-btn" class="btn btn-primary">Verify another label</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Prototype for TTB COLA label verification. No data is stored.</p>
+  </footer>
+
+  <script src="/app.js?v=29"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.claude/
+claude_code_prompt_ttb_label_verifier.md
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+
+# OCR model caches
+/tmp/paddle/
+.paddleocr/
+
+# The 29 fetched labels (~8 MB, public-domain TTB data) ARE committed so the
+# bundled demo, the fixture tests, and the HuggingFace Docker build work without
+# a network fetch at deploy time. Regenerate them with scripts/fetch_test_images.py.
+test_images/manual_download_checklist.md

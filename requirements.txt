@@ -1,0 +1,27 @@
+# Web
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# Image / PDF handling
+opencv-python-headless==4.10.0.84
+PyMuPDF==1.24.10
+numpy==1.26.4
+
+# OCR (primary backend: PaddleOCR PP-OCRv4, CPU)
+paddleocr==2.8.1
+paddlepaddle==2.6.2
+
+# Optional cloud vision backend (OCR_BACKEND=gemini; off by default)
+# Pinned to the last release that still supports Python 3.9 (local dev box);
+# also runs on the 3.11 deploy container. 1.48+/2.x require Python >=3.10.
+google-genai==1.47.0
+
+# Matching
+rapidfuzz==3.9.7
+
+# Tests
+pytest==8.3.3
+
+# Fetch script (Phase 0)
+requests==2.32.3

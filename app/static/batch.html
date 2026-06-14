@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TTB Label Verifier — Batch</title>
+  <link rel="stylesheet" href="/style.css?v=27" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Batch Label Verification</h1>
+      <p class="tagline">Verify many labels at once against a CSV of application data.</p>
+      <nav class="tabs" aria-label="Verification mode">
+        <a href="/" class="tab">Single label</a>
+        <a href="/batch.html" class="tab" aria-current="page">Batch</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="batch-upload">
+      <h2>Step 1 — Application data (CSV)</h2>
+      <p>Each row pairs a <strong>front</strong> image filename (and an optional
+         <strong>back</strong>, e.g. when the warning is on the back) with its
+         application values.</p>
+      <div class="field-row">
+        <label for="csv-input">Application CSV file</label>
+        <input type="file" id="csv-input" accept=".csv" />
+      </div>
+
+      <h2>Step 2 — Label files</h2>
+      <div id="batch-dropzone" class="dropzone" tabindex="0" role="button"
+           aria-label="Drag and drop label files here, or activate to choose files">
+        <p class="dropzone-main">Drag &amp; drop up to 50 label files here</p>
+        <p class="dropzone-sub">JPG, PNG or PDF</p>
+        <button type="button" id="batch-choose-btn" class="btn btn-secondary">Choose files</button>
+        <input type="file" id="batch-files" accept=".jpg,.jpeg,.png,.pdf" multiple hidden />
+        <p id="batch-file-count" class="file-name" aria-live="polite"></p>
+      </div>
+
+      <div class="actions">
+        <select id="batch-sample-select" class="btn btn-secondary sample-select"
+                aria-label="Load a sample batch of labels">
+          <option value="" selected disabled>Load sample…</option>
+          <option value="fixed">Fixed set</option>
+          <option value="random">Random set</option>
+          <option value="all">All labels</option>
+        </select>
+        <button type="button" id="batch-start-btn" class="btn btn-primary">Verify all labels</button>
+      </div>
+      <p id="batch-error" class="error-banner" role="alert" hidden></p>
+    </section>
+
+    <section id="batch-progress" hidden>
+      <h2>Progress</h2>
+      <div id="batch-summary" class="summary"></div>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Status</th>
+            <th scope="col">Verified</th>
+            <th scope="col">Time</th>
+          </tr>
+        </thead>
+        <tbody id="batch-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Prototype for TTB COLA label verification. No data is stored.</p>
+  </footer>
+
+  <script src="/batch.js?v=29"></script>
+</body>
+</html>
