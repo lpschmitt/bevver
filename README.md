@@ -1,5 +1,11 @@
 # TTB Alcohol Label Verification Prototype
 
+## ▶ Try the live app: **https://bevver-production.up.railway.app**
+
+<sub>Lauren Schmitt · June 14, 2026</sub>
+
+---
+
 A prototype of the core daily task of a TTB compliance agent: **verify a beverage
 label against its application data**. Upload a label (image or PDF), enter the
 application values, and the tool reads the label with a vision model and reports a
