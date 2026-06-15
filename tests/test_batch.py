@@ -1,9 +1,32 @@
 """Phase 2 batch: deterministic tests for the parts that don't need OCR."""
 from __future__ import annotations
 
+import threading
+import time
+import types
+
 from app import batch, patterns
-from app.batch import BatchItem, BatchJob, NEEDS_REVIEW, VERIFIED, PENDING
+from app.batch import (BatchItem, BatchJob, FAILED, NEEDS_REVIEW, VERIFIED,
+                       PENDING)
 from app.pipeline import Application
+
+
+def _fake_result(all_clear: bool = True):
+    """Minimal stand-in for a VerificationResult, with the attrs _worker reads."""
+    return types.SimpleNamespace(
+        summary=lambda: {"all_clear": all_clear, "verified": 1, "total": 1,
+                         "needs_review": 0 if all_clear else 1},
+        fields=[],
+        warning={},
+        beverage_class="wine",
+        ocr_text="",
+        timings=types.SimpleNamespace(to_dict=lambda: {"total_s": 0.01}),
+    )
+
+
+def _job_of(n: int) -> BatchJob:
+    items = [BatchItem(f"f{i}.jpg", Application(), b"x") for i in range(n)]
+    return BatchJob(job_id="t", items=items)
 
 
 def test_parse_application_csv_returns_front_back_specs():
@@ -42,6 +65,53 @@ def test_job_progress_counts_statuses():
     assert prog["flagged"] == 1
     assert prog["failed"] == 0
     assert len(prog["items"]) == 3
+
+
+def test_worker_runs_bounded_concurrency(monkeypatch):
+    # Stub the pipeline to record how many verifications overlap at once.
+    live = 0
+    max_seen = 0
+    lock = threading.Lock()
+
+    def stub(data, application, **kwargs):
+        nonlocal live, max_seen
+        with lock:
+            live += 1
+            max_seen = max(max_seen, live)
+        time.sleep(0.03)                 # hold the slot so workers actually overlap
+        with lock:
+            live -= 1
+        return _fake_result(all_clear=True)
+
+    monkeypatch.setattr(batch, "run_pipeline", stub)
+    monkeypatch.setattr(batch, "BATCH_CONCURRENCY", 3)
+
+    job = _job_of(6)
+    batch._worker(job)                   # blocks until the pool drains
+
+    assert job.done is True
+    assert all(it.status == VERIFIED for it in job.items)
+    # The cap is never exceeded, and parallelism actually happened.
+    assert max_seen <= 3
+    assert max_seen >= 2
+
+
+def test_worker_failure_does_not_stop_batch(monkeypatch):
+    def stub(data, application, *, filename="", **kwargs):
+        if filename == "f2.jpg":
+            raise RuntimeError("unreadable")
+        return _fake_result(all_clear=True)
+
+    monkeypatch.setattr(batch, "run_pipeline", stub)
+    monkeypatch.setattr(batch, "BATCH_CONCURRENCY", 3)
+
+    job = _job_of(5)
+    batch._worker(job)
+
+    assert job.done is True
+    statuses = {it.filename: it.status for it in job.items}
+    assert statuses["f2.jpg"] == FAILED
+    assert all(statuses[f] == VERIFIED for f in statuses if f != "f2.jpg")
 
 
 def test_field_patterns_cover_provided_fields_and_skip_blanks():

@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import tempfile
+import threading
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -83,6 +84,8 @@ _PROMPT = (
 )
 
 _client_singleton = None
+# Guards lazy client init so concurrent batch workers don't each build a client.
+_client_lock = threading.Lock()
 
 # Cache of Gemini readings keyed by image fingerprint, so an identical image
 # (byte-for-byte) isn't re-sent to the API — handy for the batch flow and repeated
@@ -170,20 +173,24 @@ def is_selected() -> bool:
 
 def _get_client():
     global _client_singleton
-    if _client_singleton is None:
-        from google import genai
-        from google.genai import types
+    if _client_singleton is not None:
+        return _client_singleton
+    with _client_lock:
+        # Re-check inside the lock: another thread may have built it while we waited.
+        if _client_singleton is None:
+            from google import genai
+            from google.genai import types
 
-        api_key = os.environ.get(GEMINI_API_KEY_ENV)
-        if not api_key:
-            raise RuntimeError(
-                f"OCR_BACKEND=gemini but {GEMINI_API_KEY_ENV} is not set."
+            api_key = os.environ.get(GEMINI_API_KEY_ENV)
+            if not api_key:
+                raise RuntimeError(
+                    f"OCR_BACKEND=gemini but {GEMINI_API_KEY_ENV} is not set."
+                )
+            log.info("Initializing Gemini client (model=%s)…", GEMINI_MODEL)
+            _client_singleton = genai.Client(
+                api_key=api_key,
+                http_options=types.HttpOptions(timeout=int(GEMINI_TIMEOUT_S * 1000)),
             )
-        log.info("Initializing Gemini client (model=%s)…", GEMINI_MODEL)
-        _client_singleton = genai.Client(
-            api_key=api_key,
-            http_options=types.HttpOptions(timeout=int(GEMINI_TIMEOUT_S * 1000)),
-        )
     return _client_singleton
 
 

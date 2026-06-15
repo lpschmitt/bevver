@@ -1,12 +1,16 @@
 """
 Phase 2 — batch verification.
 
-Multiple label files paired with a CSV of application rows keyed by filename. A
-single server-side worker processes the queue sequentially (OCR is CPU-bound and
-memory-hungry, so we deliberately do NOT parallelise). The client polls for live
-per-item status. Everything is in-memory and ephemeral — consistent with the
-"no database, nothing persists" constraint; a job is forgotten when the process
-restarts.
+Multiple label files paired with a CSV of application rows keyed by filename.
+Items are processed by a bounded pool of `BATCH_CONCURRENCY` workers (default 3):
+the default Gemini reader is network-bound, so a few in-flight requests overlap
+without straining the server, while the cap bounds both API pressure and the
+number of images held in memory at once. (The local-OCR backup serializes its
+recognition behind a lock, so it stays safe at any cap — just with less speedup.)
+Set `BATCH_CONCURRENCY=1` to restore strict sequential processing. The client
+polls for live per-item status. Everything is in-memory and ephemeral —
+consistent with the "no database, nothing persists" constraint; a job is
+forgotten when the process restarts.
 
 The single-label flow (app.main) is untouched and remains primary.
 """
@@ -14,9 +18,11 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import random
 import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -30,6 +36,11 @@ from app.pipeline import Application, run_pipeline
 router = APIRouter(prefix="/batch")
 
 MAX_FILES = 50
+
+# How many labels are verified concurrently. The default Gemini reader is
+# network-bound, so a small overlap shortens a batch without straining the server
+# or the API; 1 restores strict sequential processing.
+BATCH_CONCURRENCY = max(1, int(os.environ.get("BATCH_CONCURRENCY", "3")))
 
 # Bundled applications-data dataset, used to assemble the "Load sample" batches.
 APPLICATIONS_DATA = Path(__file__).resolve().parent.parent / "test_images" / "ApplicationsData.csv"
@@ -136,37 +147,51 @@ def _parse_application_csv(raw: bytes) -> list[dict]:
     return specs
 
 
-def _worker(job: BatchJob) -> None:
-    """Process a job's items strictly sequentially."""
-    for item in job.items:
+def _process_item(job: BatchJob, item: BatchItem) -> None:
+    """Verify a single label and record its result on the item (thread-safe)."""
+    with job.lock:
+        item.status = PROCESSING
+    try:
+        result = run_pipeline(
+            item.data, item.application,
+            content_type=item.content_type, filename=item.filename,
+            back_data=item.back_data,
+            back_content_type=item.back_content_type,
+            back_filename=item.back_filename,
+        )
+        summary = result.summary()
         with job.lock:
-            item.status = PROCESSING
-        try:
-            result = run_pipeline(
-                item.data, item.application,
-                content_type=item.content_type, filename=item.filename,
-                back_data=item.back_data,
-                back_content_type=item.back_content_type,
-                back_filename=item.back_filename,
-            )
-            summary = result.summary()
-            with job.lock:
-                item.summary = summary
-                item.fields = [f.to_dict() for f in result.fields]
-                item.warning = result.warning
-                item.beverage_class = result.beverage_class
-                item.ocr_text = result.ocr_text
-                item.timing_s = result.timings.to_dict()["total_s"]
-                item.status = VERIFIED if summary["all_clear"] else NEEDS_REVIEW
-        except Exception as exc:  # keep going; one bad file shouldn't stop the batch
-            with job.lock:
-                item.status = FAILED
-                item.error = "Could not read this label clearly."
-                item.timing_s = None
-        finally:
-            # Free the image bytes once processed to bound memory.
-            item.data = b""
-            item.back_data = None
+            item.summary = summary
+            item.fields = [f.to_dict() for f in result.fields]
+            item.warning = result.warning
+            item.beverage_class = result.beverage_class
+            item.ocr_text = result.ocr_text
+            item.timing_s = result.timings.to_dict()["total_s"]
+            item.status = VERIFIED if summary["all_clear"] else NEEDS_REVIEW
+    except Exception:  # keep going; one bad file shouldn't stop the batch
+        with job.lock:
+            item.status = FAILED
+            item.error = "Could not read this label clearly."
+            item.timing_s = None
+    finally:
+        # Free the image bytes once processed to bound memory.
+        item.data = b""
+        item.back_data = None
+
+
+def _worker(job: BatchJob) -> None:
+    """Process a job's items with up to BATCH_CONCURRENCY in flight at once.
+
+    Items are submitted in list order (so earlier rows tend to start first) but
+    complete out of order; the UI re-renders the full list each poll, keyed per
+    row, so ordering of completion doesn't matter.
+    """
+    workers = min(BATCH_CONCURRENCY, len(job.items)) or 1
+    with ThreadPoolExecutor(max_workers=workers,
+                            thread_name_prefix=f"batch-{job.job_id}") as pool:
+        # `map` blocks until every item is done; exceptions are already handled
+        # inside _process_item, so none escape here.
+        list(pool.map(lambda it: _process_item(job, it), job.items))
     job.done = True
 
 
