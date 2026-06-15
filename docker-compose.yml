@@ -7,9 +7,13 @@ services:
       - "8000:7860"
     environment:
       - PORT=7860
-      - OCR_BACKEND=paddle
-    # PaddleOCR (mkldnn) peaks ~2-3 GB during inference; a 4 GB cap OOM-kills the
-    # worker on larger images. Give it room (host Docker VM has ~7.75 GiB).
+      # Gemini vision reader is the default; needs GEMINI_API_KEY (taken from the
+      # host env). For a fully offline run, set OCR_BACKEND=paddle (or tesseract).
+      - OCR_BACKEND=${OCR_BACKEND:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    # Headroom for the local OCR backup: PaddleOCR (mkldnn) peaks ~2-3 GB during
+    # inference; a 4 GB cap OOM-kills the worker on larger images (host Docker VM
+    # has ~7.75 GiB). The Gemini default needs far less.
     deploy:
       resources:
         limits:

@@ -32,6 +32,12 @@ if _ocr_backend is None:
     pytest.skip("No OCR backend (paddleocr/pytesseract) installed.",
                 allow_module_level=True)
 
+# Gemini is the default reader, but this suite exercises the *local OCR backup*
+# end-to-end (it import-skips unless paddleocr/pytesseract is present). Pin the
+# backend to the detected local engine so run_pipeline doesn't route to Gemini.
+import os  # noqa: E402
+os.environ["OCR_BACKEND"] = "tesseract" if _ocr_backend == "pytesseract" else "paddle"
+
 from app.pipeline import Application, run_pipeline  # noqa: E402
 
 

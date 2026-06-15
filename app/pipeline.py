@@ -12,10 +12,11 @@ Verification pipeline.
 Every stage is timed and the timings are returned in the response, because the
 5-second budget is a headline requirement we have to *prove*, not assert.
 
-OCR is injected (`ocr_fn`) so the same pipeline runs under pytest with canned
-OCR output and in production with PaddleOCR — no ML model needed to test the
-extraction/matching logic. The optional Gemini backend (`OCR_BACKEND=gemini`) is
-injected the same way via `gemini_fn`.
+The reader is injected (`ocr_fn` / `gemini_fn`) so the same pipeline runs under
+pytest with canned output and in production with a real reader — no model needed
+to test the extraction/matching logic. The Gemini vision backend is the default;
+the local OCR path (`OCR_BACKEND=paddle`/`tesseract`) is the firewall/offline
+backup.
 """
 from __future__ import annotations
 

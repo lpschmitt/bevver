@@ -28,8 +28,9 @@ from app.extraction import OcrLine, OcrResult
 
 log = logging.getLogger("ocr")
 
-# Which backend to use: "paddle" (default) or "tesseract".
-OCR_BACKEND = os.environ.get("OCR_BACKEND", "paddle").lower()
+# Local OCR backup (used when OCR_BACKEND isn't "gemini"): "paddle" or
+# "tesseract". Defaults to the Gemini reader; the local path falls back to paddle.
+OCR_BACKEND = os.environ.get("OCR_BACKEND", "gemini").lower()
 
 # Cap the longest image side before OCR. Registry label artwork is often
 # 1300–2500 px; full-resolution CPU OCR blows the 5-second budget, while ~1280 px

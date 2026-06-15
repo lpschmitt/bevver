@@ -164,8 +164,8 @@ class GeminiExtraction:
 
 
 def is_selected() -> bool:
-    """True when the Gemini backend is the configured OCR backend."""
-    return os.environ.get("OCR_BACKEND", "paddle").lower() == "gemini"
+    """True when the Gemini backend is the configured reader (the default)."""
+    return os.environ.get("OCR_BACKEND", "gemini").lower() == "gemini"
 
 
 def _get_client():

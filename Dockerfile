@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     HF_HOME=/tmp/hf \
-    OCR_BACKEND=paddle
+    OCR_BACKEND=gemini
 
 WORKDIR /app
 
