@@ -1,6 +1,6 @@
 # TTB Alcohol Label Verification Prototype
 
-## ▶ Try the live app: **https://bevver-production.up.railway.app**
+### ▶ Live Demo: **https://bevver-production.up.railway.app**
 
 <sub>Lauren Schmitt · June 14, 2026</sub>
 
