@@ -103,6 +103,25 @@ def _num_body(value: float) -> str:
     return re.escape(f"{value:g}") + r"0*"
 
 
+# The ABV form field accepts however an operator reads the strength off a label —
+# "40", "40%", "40 %", "40 pct", "40% abv" — so we pull out the first number and
+# ignore any percent/unit decoration. Returns None when there is no number.
+_ABV_NUM_RE = re.compile(r"[-+]?\d*\.?\d+")
+
+
+def parse_abv_value(value) -> float | None:
+    """Extract the numeric ABV from a free-text entry, or None if there is none."""
+    if value is None:
+        return None
+    m = _ABV_NUM_RE.search(str(value))
+    if not m:
+        return None
+    try:
+        return float(m.group(0))
+    except ValueError:
+        return None
+
+
 def abv_regex(value: float) -> re.Pattern:
     """Pattern matching the ABV figure on a label, in percent or as proof.
 
@@ -301,11 +320,9 @@ def field_patterns(application) -> list[dict]:
         add("Class/type", application.class_type, rx.pattern if rx else "—")
 
     if getattr(application, "abv", ""):
-        try:
-            rx = abv_regex(float(application.abv))
-            add("Alcohol content (ABV)", application.abv, rx.pattern)
-        except (TypeError, ValueError):
-            pass
+        abv_val = parse_abv_value(application.abv)
+        if abv_val is not None:
+            add("Alcohol content (ABV)", application.abv, abv_regex(abv_val).pattern)
 
     if getattr(application, "net_contents", ""):
         vols = parse_volumes_ml(application.net_contents)
@@ -390,10 +407,8 @@ def matched_on_label(field: str, value: str, label_text: str) -> str | None:
     elif f.startswith("class"):
         rx = class_regex(value)
     elif f.startswith("alcohol") or "abv" in f:
-        try:
-            rx = abv_regex(float(value))
-        except (TypeError, ValueError):
-            rx = None
+        abv_val = parse_abv_value(value)
+        rx = abv_regex(abv_val) if abv_val is not None else None
     if rx is None:
         return None
     m = rx.search(text)

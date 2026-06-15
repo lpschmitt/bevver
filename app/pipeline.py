@@ -285,10 +285,15 @@ def _show_matched_label_text(fields: list, app: Application, full_text: str) -> 
     runs (its output is just no longer what we show here). Fields whose pattern
     finds nothing (e.g. a mismatch, or a class matched via its superclass) keep
     their existing display.
+
+    Class/type is intentionally excluded: ``match_class_type`` already surfaces
+    the precise matched designation (e.g. "Whiskey", resolved via the lookup
+    table), which is more specific than what the application's broad class regex
+    would re-match here (its head word could pick a generic "Spirits" off the
+    label instead).
     """
     values = {
         "Brand name": app.brand_name,
-        "Class/type": app.class_type,
         "Alcohol content (ABV)": app.abv,
         "Net contents": app.net_contents,
         "Country of origin": app.country_of_origin,
@@ -313,7 +318,8 @@ def _extract_and_match_gemini(
     fields = [
         matching.match_brand(app.brand_name, reading.brand_name, full_text=reading.full_text),
         matching.match_class_type(app.class_type, reading.class_type,
-                                  expected_display=class_lookup.superclass_for(app.class_type)),
+                                  expected_display=class_lookup.superclass_for(app.class_type),
+                                  full_text=reading.full_text),
         matching.match_abv_classed(rules, app.abv, reading.abv, reading.proof,
                                    reading.full_text),
         matching.match_net_contents(app.net_contents, reading.net_contents,
@@ -360,9 +366,12 @@ def _extract_and_match(app: Application, ocr_result: OcrResult) -> VerificationR
 
     # Class/type (fuzzy substring across all OCR text). The "Expected" column
     # shows the superclass looked up for the application value (display only).
+    # No separately-extracted class field here, so the full transcription is the
+    # search target; "Found on label" still shows the concise matched designation.
     fields.append(matching.match_class_type(
-        app.class_type, full_text,
-        expected_display=class_lookup.superclass_for(app.class_type)))
+        app.class_type, "",
+        expected_display=class_lookup.superclass_for(app.class_type),
+        full_text=full_text))
 
     # ABV (class-aware: strict for spirits, optional for malt, table-wine for wine).
     fields.append(matching.match_abv_classed(rules, app.abv, found_abv, found_proof,

@@ -11,6 +11,48 @@ const form = document.getElementById("application-form");
 const uploadError = document.getElementById("upload-error");
 const loadSampleSelect = document.getElementById("load-sample-select");
 const resetBtn = document.getElementById("reset-btn");
+const clearFieldsBtn = document.getElementById("clear-fields-btn");
+
+// Debug aids (e.g. the PATTERN toggle) appear only when the page is opened with
+// a ?debug URL parameter.
+const DEBUG = new URLSearchParams(window.location.search).has("debug");
+
+// The application fields the form collects; cleared together by "Clear Fields".
+const APP_FIELD_IDS = ["brand_name", "class_type", "abv", "net_contents", "country_of_origin"];
+
+// The Class/type field is a 3-way dropdown (the TTB superclasses). Sample,
+// CSV and batch-handoff records carry a specific free-text designation
+// ("STRAIGHT WHISKY", "TABLE RED WINE", "BEER"), so map it onto the matching
+// option — mirrors the backend's app.classes.infer_class keyword order.
+const CLASS_KEYWORDS = [
+  ["Beer/Malt", ["beer", "ale", "lager", "ipa", "pilsner", "pilsener", "stout",
+                 "porter", "saison", "malt", "hefeweizen", "kolsch", "bock"]],
+  ["Distilled Spirits", ["whisky", "whiskey", "bourbon", "rye", "vodka", "gin",
+                         "rum", "tequila", "brandy", "cognac", "liqueur", "cordial",
+                         "mezcal", "schnapps", "spirit"]],
+  ["Wine", ["wine", "cabernet", "merlot", "pinot", "chardonnay", "sauvignon",
+            "riesling", "zinfandel", "syrah", "shiraz", "malbec", "port", "sherry",
+            "vermouth", "rosé", "rose", "sparkling", "champagne"]],
+];
+// The dropdown's three option values, keyed by normalized form, so a record
+// whose class_type already *is* a superclass — and in any casing, e.g. the
+// dataset's "DISTILLED SPIRITS" / "WINE" — maps to the option's exact casing.
+const CLASS_OPTIONS = {
+  "distilled spirits": "Distilled Spirits",
+  "wine": "Wine",
+  "beer/malt": "Beer/Malt",
+};
+function setClassType(raw) {
+  const t = (raw || "").trim().toLowerCase();
+  // An exact superclass value passes through; otherwise infer from keywords.
+  let value = CLASS_OPTIONS[t] || "";
+  if (!value && t) {
+    for (const [cat, words] of CLASS_KEYWORDS) {
+      if (words.some((k) => t.includes(k))) { value = cat; break; }
+    }
+  }
+  document.getElementById("class_type").value = value;
+}
 
 // A label can be uploaded as two sides; the back is optional.
 let selectedFront = null;
@@ -145,7 +187,7 @@ async function loadSampleByQuery(query, errMsg) {
     if (!res.ok) throw new Error("no sample");
     const s = await res.json();
     document.getElementById("brand_name").value = s.brand_name || "";
-    document.getElementById("class_type").value = s.class_type || "";
+    setClassType(s.class_type);
     document.getElementById("abv").value = s.abv || "";
     document.getElementById("net_contents").value = s.net_contents || "";
     document.getElementById("country_of_origin").value = s.country_of_origin || "";
@@ -197,7 +239,7 @@ function parseCsv(text) {
 
 function fillFormFromRow(r) {
   document.getElementById("brand_name").value = r.brand_name || "";
-  document.getElementById("class_type").value = r.class_type || "";
+  setClassType(r.class_type);
   document.getElementById("abv").value = r.abv || "";
   document.getElementById("net_contents").value = r.net_contents || "";
   document.getElementById("country_of_origin").value = r.country_of_origin || "";
@@ -328,21 +370,24 @@ function renderResultActions(data) {
     bar.appendChild(ttb);
   }
 
-  // PATTERN — toggle the generated field patterns + OCR label text.
-  const pat = document.createElement("button");
-  pat.type = "button";
-  pat.className = "entry-link" + (resultPatternsOpen ? " is-open" : "");
-  pat.id = "result-pattern-toggle";
-  pat.setAttribute("aria-pressed", resultPatternsOpen ? "true" : "false");
-  pat.textContent = "PATTERN";
-  pat.title = "Show the generated field patterns and OCR label text";
-  pat.addEventListener("click", () => {
-    resultPatternsOpen = !resultPatternsOpen;
-    pat.classList.toggle("is-open", resultPatternsOpen);
+  // PATTERN — toggle the generated field patterns + OCR label text. A debugging
+  // aid, shown only when the page is opened with a ?debug URL parameter.
+  if (DEBUG) {
+    const pat = document.createElement("button");
+    pat.type = "button";
+    pat.className = "entry-link" + (resultPatternsOpen ? " is-open" : "");
+    pat.id = "result-pattern-toggle";
     pat.setAttribute("aria-pressed", resultPatternsOpen ? "true" : "false");
-    renderResultPatternPanel();
-  });
-  bar.appendChild(pat);
+    pat.textContent = "PATTERN";
+    pat.title = "Show the generated field patterns and OCR label text";
+    pat.addEventListener("click", () => {
+      resultPatternsOpen = !resultPatternsOpen;
+      pat.classList.toggle("is-open", resultPatternsOpen);
+      pat.setAttribute("aria-pressed", resultPatternsOpen ? "true" : "false");
+      renderResultPatternPanel();
+    });
+    bar.appendChild(pat);
+  }
 }
 
 // Build (or hide) the generated-pattern / OCR-text panel for the current result.
@@ -489,7 +534,7 @@ async function consumeSingleLabelHandoff() {
   try { h = JSON.parse(raw); } catch (e) { return; }
   const a = h.app || {};
   document.getElementById("brand_name").value = a.brand_name || "";
-  document.getElementById("class_type").value = a.class_type || "";
+  setClassType(a.class_type);
   document.getElementById("abv").value = a.abv || "";
   document.getElementById("net_contents").value = a.net_contents || "";
   document.getElementById("country_of_origin").value = a.country_of_origin || "";
@@ -510,6 +555,20 @@ if (_ttbId && _ttbId.trim()) {
 } else {
   consumeSingleLabelHandoff();
 }
+
+// --- Clear Fields: blank the application fields AND drop the uploaded label
+// images, so the operator gets a clean slate.
+clearFieldsBtn.addEventListener("click", () => {
+  APP_FIELD_IDS.forEach((id) => { document.getElementById(id).value = ""; });
+  selectedFront = null;
+  selectedBack = null;
+  frontDz.input.value = "";
+  backDz.input.value = "";
+  document.getElementById("dropzone-front")._clearName();
+  document.getElementById("dropzone-back")._clearName();
+  clearUploadError();
+  document.getElementById("brand_name").focus();
+});
 
 // --- Reset ----------------------------------------------------------------- //
 resetBtn.addEventListener("click", () => {

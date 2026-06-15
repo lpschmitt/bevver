@@ -4,24 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TTB Label Verifier</title>
-  <link rel="stylesheet" href="/style.css?v=27" />
+  <link rel="stylesheet" href="/style.css?v=31" />
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <h1>Label Verification Tool</h1>
-      <p class="tagline">US Treasury Take-Home Project: Alcohol Label Verifier submitted by Lauren Schmitt</p>
-      <nav class="tabs" aria-label="Verification mode">
-        <a href="/" class="tab" aria-current="page">Single label</a>
-        <a href="/batch.html" class="tab">Batch</a>
-      </nav>
+      <h1>Alcohol Label Verification - Single</h1>
+      <div class="header-bottom">
+        <nav class="tabs" aria-label="Verification mode">
+          <a href="/" class="tab" aria-current="page">Single label</a>
+          <a href="/batch.html" class="tab">Batch</a>
+        </nav>
+        <p class="attribution">US Treasury Take-Home Project submitted by
+          <a href="mailto:lps@igencorp.com?subject=US%20Treasury%20Take-home%20Project">Lauren Schmitt</a></p>
+      </div>
     </div>
   </header>
 
   <main>
     <!-- STATE 1: UPLOAD ------------------------------------------------- -->
     <section id="upload-state" aria-labelledby="upload-heading">
-      <h2 id="upload-heading">Step 1 — Choose the label images</h2>
+      <h2 id="upload-heading">Step 1 - Upload Label Images</h2>
       <p class="hint">Upload the front of the label. If the warning or alcohol
         content is on the back, add the back image too.</p>
 
@@ -54,7 +57,7 @@
       </div>
 
       <div class="section-heading">
-        <h2>Step 2 — Enter the application data</h2>
+        <h2>Step 2 - Enter Application Fields</h2>
       </div>
       <form id="application-form" class="app-form">
         <div class="field-row">
@@ -63,10 +66,15 @@
         </div>
         <div class="field-row">
           <label for="class_type">Class / type</label>
-          <input type="text" id="class_type" name="class_type" autocomplete="off" />
+          <select id="class_type" name="class_type" class="field-select" autocomplete="off">
+            <option value="" selected disabled>Select a type…</option>
+            <option value="Distilled Spirits">Distilled Spirits</option>
+            <option value="Wine">Wine</option>
+            <option value="Beer/Malt">Beer / Malt beverage</option>
+          </select>
         </div>
         <div class="field-row">
-          <label for="abv">Alcohol content (ABV %)</label>
+          <label for="abv">Alcohol content (ABV)</label>
           <input type="text" id="abv" name="abv" inputmode="decimal" autocomplete="off" />
         </div>
         <div class="field-row">
@@ -94,6 +102,7 @@
             </optgroup>
           </select>
           <button type="submit" id="verify-btn" class="btn btn-primary">Verify Label</button>
+          <button type="button" id="clear-fields-btn" class="btn btn-clear">Clear Fields</button>
         </div>
       </form>
 
@@ -151,6 +160,6 @@
     <p>Prototype for TTB COLA label verification. No data is stored.</p>
   </footer>
 
-  <script src="/app.js?v=29"></script>
+  <script src="/app.js?v=33"></script>
 </body>
 </html>

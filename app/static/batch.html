@@ -4,32 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TTB Label Verifier — Batch</title>
-  <link rel="stylesheet" href="/style.css?v=27" />
+  <link rel="stylesheet" href="/style.css?v=31" />
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <h1>Batch Label Verification</h1>
-      <p class="tagline">Verify many labels at once against a CSV of application data.</p>
-      <nav class="tabs" aria-label="Verification mode">
-        <a href="/" class="tab">Single label</a>
-        <a href="/batch.html" class="tab" aria-current="page">Batch</a>
-      </nav>
+      <h1>Alcohol Label Verification - Batch</h1>
+      <div class="header-bottom">
+        <nav class="tabs" aria-label="Verification mode">
+          <a href="/" class="tab">Single label</a>
+          <a href="/batch.html" class="tab" aria-current="page">Batch</a>
+        </nav>
+        <p class="attribution">US Treasury Take-Home Project submitted by
+          <a href="mailto:lps@igencorp.com?subject=US%20Treasury%20Take-home%20Project">Lauren Schmitt</a></p>
+      </div>
     </div>
   </header>
 
   <main>
     <section id="batch-upload">
-      <h2>Step 1 — Application data (CSV)</h2>
-      <p>Each row pairs a <strong>front</strong> image filename (and an optional
-         <strong>back</strong>, e.g. when the warning is on the back) with its
-         application values.</p>
-      <div class="field-row">
-        <label for="csv-input">Application CSV file</label>
-        <input type="file" id="csv-input" accept=".csv" />
-      </div>
-
-      <h2>Step 2 — Label files</h2>
+      <h2>Step 1 - Upload Label Images</h2>
       <div id="batch-dropzone" class="dropzone" tabindex="0" role="button"
            aria-label="Drag and drop label files here, or activate to choose files">
         <p class="dropzone-main">Drag &amp; drop up to 50 label files here</p>
@@ -37,6 +31,15 @@
         <button type="button" id="batch-choose-btn" class="btn btn-secondary">Choose files</button>
         <input type="file" id="batch-files" accept=".jpg,.jpeg,.png,.pdf" multiple hidden />
         <p id="batch-file-count" class="file-name" aria-live="polite"></p>
+      </div>
+
+      <h2>Step 2 - Enter Application Fields</h2>
+      <p>Upload a CSV file with application fields.
+        <a href="/sample-csv" download="Application-Sample.csv">Download Sample CSV</a>,
+        modify with your application fields, and upload, along with images for front and back labels.</p>
+      <div class="field-row">
+        <label for="csv-input">Application CSV file</label>
+        <input type="file" id="csv-input" accept=".csv" />
       </div>
 
       <div class="actions">
@@ -73,6 +76,6 @@
     <p>Prototype for TTB COLA label verification. No data is stored.</p>
   </footer>
 
-  <script src="/batch.js?v=29"></script>
+  <script src="/batch.js?v=31"></script>
 </body>
 </html>

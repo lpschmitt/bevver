@@ -148,7 +148,8 @@ def match_brand(expected: str, found: str, full_text: str | None = None) -> Fiel
 # --------------------------------------------------------------------------- #
 
 def match_class_type(expected: str, found: str, threshold: float = _FUZZY_THRESHOLD,
-                     expected_display: str | None = None) -> FieldResult:
+                     expected_display: str | None = None,
+                     full_text: str | None = None) -> FieldResult:
     """Verify the application's class/type against the label text.
 
     The generated pattern matches either the full designation or its commodity
@@ -156,19 +157,28 @@ def match_class_type(expected: str, found: str, threshold: float = _FUZZY_THRESH
     "Kentucky Straight Bourbon Whiskey"). ``expected_display`` overrides only the
     "Expected" column (e.g. the looked-up superclass); the verdict is still
     computed from the raw ``expected`` vs the label.
+
+    ``found`` is the best class/type text on the label (a separately-extracted
+    field, when one exists). ``full_text`` is the whole transcription, used as a
+    fallback search target so a designation stated *anywhere* on the label — e.g.
+    "Whiskey" appearing only in descriptive copy — is still recognized and
+    resolved via the class lookup table, even when ``found`` is empty.
     """
     field = "Class/type"
     shown = expected_display if expected_display is not None else expected
     if not expected:
         return FieldResult(field, shown, found, NOT_FOUND, 0.0,
                            "No class/type provided in the application.")
-    if not found:
+    # Prefer the extracted class field; fall back to the full transcription so a
+    # designation buried elsewhere on the label can still be found and looked up.
+    search = found or full_text or ""
+    if not search:
         return FieldResult(field, shown, found, MISSING, 0.0,
                            "Could not find the class/type text on the label.")
 
     # 1. The application's own designation (or its head word) appears on the label.
     rx = patterns.class_regex(expected)
-    m = rx.search(found) if rx else None
+    m = rx.search(search) if rx else None
     if m:
         return FieldResult(field, shown, m.group(0), MATCH, 0.97,
                            "Class/type text found on the label.")
@@ -178,19 +188,21 @@ def match_class_type(expected: str, found: str, threshold: float = _FUZZY_THRESH
     #    a "TABLE RED WINE" application — both are Wine).
     from app import class_lookup
     app_cat = class_lookup.superclass_for(expected)
-    label = class_lookup.label_designation(found)
+    label = class_lookup.label_designation(search)
     # label_designation gives the matched designation for display; superclass_for
     # is the bidirectional fallback so a partial read ("Kentucky Straight Bourbon"
     # without "Whiskey") still resolves to its category.
-    label_cat = label[1] if label else class_lookup.superclass_for(found)
+    label_cat = label[1] if label else class_lookup.superclass_for(search)
+    # "Found on label" always shows the concise matched designation, never the raw
+    # search text (which may be the whole transcription when we fell back to it).
     if app_cat and label_cat and label_cat == app_cat:
-        des = label[0] if label else found
+        des = label[0] if label else (found or label_cat)
         return FieldResult(field, shown, des, MATCH, 0.95,
                            f'Label states "{des}", a {app_cat} class consistent '
                            "with the application.")
 
     # 3. Fuzzy fallback: the designation appears with OCR noise / across lines.
-    norm_exp, norm_found = normalize_text(expected), normalize_text(found)
+    norm_exp, norm_found = normalize_text(expected), normalize_text(search)
     score = fuzz.partial_ratio(norm_exp, norm_found) / 100.0
     if score >= threshold:
         return FieldResult(field, shown, found, MATCH_NORMALIZED, score,
@@ -198,7 +210,7 @@ def match_class_type(expected: str, found: str, threshold: float = _FUZZY_THRESH
     # The label states a recognized designation in a *different* TTB category ->
     # a genuine mismatch; no recognized class designation at all -> missing.
     if label_cat:
-        return FieldResult(field, shown, found, MISMATCH, score,
+        return FieldResult(field, shown, (label[0] if label else found), MISMATCH, score,
                            f"Label states a {label_cat} designation, which "
                            f"differs from the application (best ratio {score:.0%}).")
     return FieldResult(field, shown, found, MISSING, score,
@@ -216,10 +228,8 @@ def match_class_type(expected: str, found: str, threshold: float = _FUZZY_THRESH
 # --------------------------------------------------------------------------- #
 
 def _to_float(value: str) -> float | None:
-    try:
-        return float(str(value).strip())
-    except (TypeError, ValueError):
-        return None
+    # Accept free-text strengths from the form ("40", "40%", "40 % abv", "40 pct").
+    return patterns.parse_abv_value(value)
 
 
 def match_abv(expected: str, found_abv: float | None,

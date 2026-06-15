@@ -25,28 +25,34 @@ log = logging.getLogger("app")
 LOOKUP_CSV = Path(__file__).resolve().parent.parent / "Reference" / "ClassLookUp.csv"
 
 
-def _load() -> tuple[dict[str, str], list[tuple[str, str]], dict[str, str]]:
-    """Load the CSV into (exact-map, designations-by-length-desc, originals).
+def _load() -> tuple[dict[str, str], list[tuple[str, str]], dict[str, str], dict[str, str]]:
+    """Load the CSV into (exact-map, designations-by-length-desc, originals, categories).
 
     ``exact``      : normalized designation -> Category, for O(1) exact hits.
     ``by_length``  : (normalized designation, Category) sorted longest-first, so
                      the most specific designation wins a token-substring match.
     ``originals``  : normalized designation -> original-cased designation, so a
                      match can be surfaced as it is written in the table ("Malbec").
+    ``categories`` : normalized Category -> original Category, so an application
+                     whose class/type *is* a superclass name (the form's dropdown:
+                     "Distilled Spirits" / "Wine" / "Beer/Malt") resolves to itself.
     Missing/unreadable file degrades to empty tables (lookups return None).
     """
     exact: dict[str, str] = {}
     pairs: list[tuple[str, str]] = []
     originals: dict[str, str] = {}
+    categories: dict[str, str] = {}
     if not LOOKUP_CSV.exists():
         log.warning("Class lookup table not found at %s; superclass display disabled.",
                     LOOKUP_CSV)
-        return exact, pairs, originals
+        return exact, pairs, originals, categories
     # utf-8-sig drops the BOM the file is saved with.
     with LOOKUP_CSV.open(newline="", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
             category = (row.get("Category") or "").strip()
             designation = (row.get("Designation") or "").strip()
+            if category:
+                categories.setdefault(normalize_text(category), category)
             norm = normalize_text(designation)
             if not category or not norm:
                 continue
@@ -54,10 +60,10 @@ def _load() -> tuple[dict[str, str], list[tuple[str, str]], dict[str, str]]:
             originals.setdefault(norm, designation)
             pairs.append((norm, category))
     pairs.sort(key=lambda p: len(p[0]), reverse=True)
-    return exact, pairs, originals
+    return exact, pairs, originals, categories
 
 
-_EXACT, _BY_LENGTH, _ORIG = _load()
+_EXACT, _BY_LENGTH, _ORIG, _CATEGORIES = _load()
 
 
 def superclass_for(class_type: str) -> str | None:
@@ -71,6 +77,9 @@ def superclass_for(class_type: str) -> str | None:
     key = normalize_text(class_type or "")
     if not key:
         return None
+    # The value is itself a superclass name (the form's Class/type dropdown).
+    if key in _CATEGORIES:
+        return _CATEGORIES[key]
     if key in _EXACT:
         return _EXACT[key]
     padded_key = f" {key} "

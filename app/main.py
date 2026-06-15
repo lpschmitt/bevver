@@ -209,6 +209,18 @@ def _sample_response(row: dict) -> JSONResponse:
     })
 
 
+@app.get("/sample-csv")
+def sample_csv() -> Response:
+    """Serve the bundled ApplicationsData.csv as a downloadable sample template."""
+    if not APPLICATIONS_DATA.exists():
+        return JSONResponse({"error": "Sample CSV not found."}, status_code=404)
+    return FileResponse(
+        APPLICATIONS_DATA,
+        media_type="text/csv",
+        filename="Application-Sample.csv",
+    )
+
+
 @app.get("/sample-image/{name}")
 def sample_image(name: str) -> Response:
     """Serve a bundled test label by filename so the demo runs in one click."""

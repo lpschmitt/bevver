@@ -35,14 +35,30 @@ body {
 .header-inner {
   max-width: 920px;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem;
+  padding: 1.5rem 1.25rem 0;  /* no bottom padding — header-foot sits flush at bottom */
 }
 .site-header h1 { margin: 0; font-size: 1.8rem; }
-.tagline { margin: .35rem 0 0; color: #d6e3f0; font-size: 1rem; }
+/* Bottom row of the header: tabs on the left, attribution on the right. */
+.header-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.attribution {
+  margin: 0 0 0;
+  padding-bottom: .55rem;   /* vertically centres text against tab height */
+  color: #d6e3f0;
+  font-size: .85rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.attribution a { color: #fff; text-decoration: underline; }
+.attribution a:hover { color: #fff; }
 .tabs {
   display: flex;
   gap: .25rem;
-  margin: 1rem 0 -1.5rem;
 }
 .tab {
   padding: .55rem 1.1rem;
@@ -96,6 +112,10 @@ h2 { font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
   background: #fff;
   object-fit: contain;
 }
+/* When no image is selected (initial state, or after Clear), the preview must be
+   fully gone — not an empty white box. The `display: block` above otherwise wins
+   over the `hidden` attribute, so restore the hide here. */
+.dz-preview[hidden] { display: none; }
 .dropzone.has-preview { background: #fff; }
 /* The "drag & drop / JPG, PNG or PDF" prompt is redundant once a preview shows. */
 .dropzone.has-preview .dropzone-main,
@@ -123,14 +143,18 @@ h2 { font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
 /* Form --------------------------------------------------------------------- */
 .app-form { display: flex; flex-direction: column; gap: 1rem; }
 .field-row { display: flex; flex-direction: column; gap: .35rem; }
-.field-row label { font-weight: 600; }
-.field-row input {
+.field-row label { font-weight: 600; text-transform: uppercase; }
+.field-row input,
+.field-row select {
   font-size: 1.1rem;
+  line-height: 1.5;
   padding: .7rem .75rem;
   border: 2px solid var(--gray-border);
   border-radius: var(--radius);
 }
-.field-row input:focus { outline: 3px solid var(--blue); border-color: var(--blue); }
+.field-select { background: #fff; }
+.field-row input:focus,
+.field-row select:focus { outline: 3px solid var(--blue); border-color: var(--blue); }
 
 /* Buttons ------------------------------------------------------------------ */
 .actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.25rem; }
@@ -147,6 +171,9 @@ h2 { font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
 .btn-primary:hover { background: var(--blue-dark); }
 .btn-secondary { background: #fff; color: var(--blue-dark); border-color: var(--blue); }
 .btn-secondary:hover { background: var(--gray-light); }
+/* "Clear Fields" — white button, red letters, red outline; pushed flush right. */
+.btn-clear { margin-left: auto; background: #fff; color: var(--red); border-color: var(--red); }
+.btn-clear:hover { background: var(--red-bg); }
 
 /* "Load sample" type menu — a select styled like a secondary button. */
 .sample-select { cursor: pointer; padding-right: 2.4rem; }

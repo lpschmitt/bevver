@@ -14,8 +14,13 @@ const summaryEl = document.getElementById("batch-summary");
 const bodyEl = document.getElementById("batch-body");
 
 let selectedFiles = [];
+let pendingSampleCsv = null;   // in-memory CSV built by "Load sample"; cleared when a real CSV is picked
 let pollTimer = null;
 let currentJobId = null;
+
+// Debug aids (e.g. the PATTERN toggle) appear only when the page is opened with
+// a ?debug URL parameter.
+const DEBUG = new URLSearchParams(window.location.search).has("debug");
 
 // Drill-down: which row indices are expanded, and a cache of fetched per-item
 // detail (so re-renders during polling don't re-fetch). patternsOpen tracks which
@@ -80,6 +85,9 @@ dropzone.addEventListener("keydown", (e) => {
 });
 filesInput.addEventListener("change", () => setFiles(filesInput.files));
 
+// A real CSV upload supersedes any in-memory sample.
+csvInput.addEventListener("change", () => { pendingSampleCsv = null; });
+
 ["dragenter", "dragover"].forEach((ev) =>
   dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("dragover"); }));
 ["dragleave", "drop"].forEach((ev) =>
@@ -120,9 +128,10 @@ async function submitBatch(csvFile, files) {
 
 startBtn.addEventListener("click", () => {
   clearError();
-  if (!csvInput.files.length) { showError("Please choose the application CSV file."); return; }
+  const csvFile = csvInput.files.length ? csvInput.files[0] : pendingSampleCsv;
+  if (!csvFile) { showError("Please choose the application CSV file."); return; }
   if (!selectedFiles.length) { showError("Please choose at least one label file."); return; }
-  submitBatch(csvInput.files[0], selectedFiles);
+  submitBatch(csvFile, selectedFiles);
 });
 
 // --- Load sample batch ----------------------------------------------------- //
@@ -152,7 +161,7 @@ async function fetchSampleImage(name) {
 
 async function loadSampleBatch(kind) {
   clearError();
-  startBtn.disabled = true;
+  startBtn.disabled = true;   // disabled while fetching; re-enabled below on success or error
   try {
     const res = await fetch(`/batch/sample?set=${encodeURIComponent(kind)}`);
     const data = await res.json();
@@ -167,13 +176,12 @@ async function loadSampleBatch(kind) {
     for (const name of names) { const f = await fetchSampleImage(name); if (f) files.push(f); }
     if (!files.length) { showError("Sample images couldn't be loaded."); startBtn.disabled = false; return; }
 
-    // Reflect the loaded sample in the pickers so a follow-up "Verify all" works too.
-    csvInput.value = "";          // the in-memory sample CSV supersedes any picked file
+    // Load the files into the form; the user clicks "Verify all labels" to run.
+    pendingSampleCsv = new File([rowsToCsv(rows)], "sample_batch.csv", { type: "text/csv" });
+    csvInput.value = "";          // clear any previously-picked real CSV file
     setFiles(files);
-    fileCountEl.textContent = `${files.length} sample file(s) loaded`;
-
-    const csvFile = new File([rowsToCsv(rows)], "sample_batch.csv", { type: "text/csv" });
-    await submitBatch(csvFile, files);
+    fileCountEl.textContent = `${files.length} sample file(s) loaded — click Verify all labels to run`;
+    startBtn.disabled = false;
   } catch (err) {
     showError("We couldn't load the sample. Please try again.");
     startBtn.disabled = false;
@@ -380,20 +388,23 @@ function detailActions(index, item, detail) {
   });
   bar.appendChild(single);
 
-  // PATTERN — show the regex generated from each field and the OCR label text.
-  const open = patternsOpen.has(index);
-  const pat = document.createElement("button");
-  pat.type = "button";
-  pat.className = "entry-link" + (open ? " is-open" : "");
-  pat.setAttribute("aria-pressed", open ? "true" : "false");
-  pat.textContent = "PATTERN";
-  pat.title = "Show the generated field patterns and OCR label text";
-  pat.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (open) patternsOpen.delete(index); else patternsOpen.add(index);
-    refresh();
-  });
-  bar.appendChild(pat);
+  // PATTERN — show the regex generated from each field and the OCR label text. A
+  // debugging aid, shown only when the page is opened with a ?debug URL parameter.
+  if (DEBUG) {
+    const open = patternsOpen.has(index);
+    const pat = document.createElement("button");
+    pat.type = "button";
+    pat.className = "entry-link" + (open ? " is-open" : "");
+    pat.setAttribute("aria-pressed", open ? "true" : "false");
+    pat.textContent = "PATTERN";
+    pat.title = "Show the generated field patterns and OCR label text";
+    pat.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (open) patternsOpen.delete(index); else patternsOpen.add(index);
+      refresh();
+    });
+    bar.appendChild(pat);
+  }
 
   return bar;
 }
