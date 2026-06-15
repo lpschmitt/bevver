@@ -177,6 +177,15 @@ h2 { font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
 
 /* "Load sample" type menu — a select styled like a secondary button. */
 .sample-select { cursor: pointer; padding-right: 2.4rem; }
+/* The "Load sample" picker stays quiet — never show a hover/focus/active
+   highlight (no background fill, no outline). */
+.sample-select:hover,
+.sample-select:focus,
+.sample-select:focus-visible,
+.sample-select:active {
+  background: #fff;
+  outline: none;
+}
 
 /* Processing --------------------------------------------------------------- */
 #processing-state { text-align: center; padding: 3rem 1rem; }

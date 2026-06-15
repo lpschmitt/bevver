@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TTB Label Verifier — Batch</title>
-  <link rel="stylesheet" href="/style.css?v=31" />
+  <link rel="stylesheet" href="/style.css?v=32" />
 </head>
 <body>
   <header class="site-header">
@@ -23,7 +23,16 @@
 
   <main>
     <section id="batch-upload">
-      <h2>Step 1 - Upload Label Images</h2>
+      <h2>Step 1 - Enter Application Fields</h2>
+      <p>Upload a CSV file with application fields.
+        <a href="/sample-csv" download="Application-Sample.csv">Download Sample CSV</a>,
+        modify with your application fields, and upload, along with images for front and back labels.</p>
+      <div class="field-row">
+        <label for="csv-input">Application CSV file</label>
+        <input type="file" id="csv-input" accept=".csv" />
+      </div>
+
+      <h2>Step 2 - Upload Label Images</h2>
       <div id="batch-dropzone" class="dropzone" tabindex="0" role="button"
            aria-label="Drag and drop label files here, or activate to choose files">
         <p class="dropzone-main">Drag &amp; drop up to 50 label files here</p>
@@ -31,15 +40,6 @@
         <button type="button" id="batch-choose-btn" class="btn btn-secondary">Choose files</button>
         <input type="file" id="batch-files" accept=".jpg,.jpeg,.png,.pdf" multiple hidden />
         <p id="batch-file-count" class="file-name" aria-live="polite"></p>
-      </div>
-
-      <h2>Step 2 - Enter Application Fields</h2>
-      <p>Upload a CSV file with application fields.
-        <a href="/sample-csv" download="Application-Sample.csv">Download Sample CSV</a>,
-        modify with your application fields, and upload, along with images for front and back labels.</p>
-      <div class="field-row">
-        <label for="csv-input">Application CSV file</label>
-        <input type="file" id="csv-input" accept=".csv" />
       </div>
 
       <div class="actions">

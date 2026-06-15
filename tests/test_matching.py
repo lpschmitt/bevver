@@ -4,16 +4,17 @@ from __future__ import annotations
 import pytest
 
 from app import matching, patterns
-from app.matching import (ASSUMED, MATCH, MATCH_NORMALIZED, MISMATCH, MISSING,
+from app.matching import (MATCH, MATCH_NORMALIZED, MISMATCH, MISSING,
                           NOT_FOUND, PARTIAL_MATCH)
 
 
-# --- Blank-in-form but read off the label -> "Assumed" (yellow), not "missing" #
-def test_blank_form_fields_found_on_label_are_assumed():
+# --- Blank-in-form but read off the label -> "Mismatch" (the application is
+#     missing a value the label states), not "missing" -----------------------#
+def test_blank_form_fields_found_on_label_are_mismatch():
     # ABV / net contents / brand left blank in the application but read by OCR.
-    assert matching.match_abv("", 14.0, None).verdict == ASSUMED
-    assert matching.match_net_contents("", "750 mL").verdict == ASSUMED
-    assert matching.match_brand("", "PINOTOPIA").verdict == ASSUMED
+    assert matching.match_abv("", 14.0, None).verdict == MISMATCH
+    assert matching.match_net_contents("", "750 mL").verdict == MISMATCH
+    assert matching.match_brand("", "PINOTOPIA").verdict == MISMATCH
 
 
 def test_blank_form_fields_absent_on_label_stay_not_found():

@@ -70,12 +70,14 @@ def normalize_text(value: str) -> str:
 def match_brand(expected: str, found: str, full_text: str | None = None) -> FieldResult:
     field = "Brand name"
     if not expected:
-        # Blank in the form: read off the label -> assumed; nothing read -> not found.
+        # Blank in the form: on the label -> mismatch (the application is missing
+        # a value the label states); nothing read -> not found.
         if not found:
             return FieldResult(field, "", found, NOT_FOUND, 0.0,
                                "Could not locate a brand name on the label.")
-        return FieldResult(field, "", found, ASSUMED, 1.0,
-                           "Read from the label; not given in the application to verify against.")
+        return FieldResult(field, "", found, MISMATCH, 0.0,
+                           "Found on the label, but the application did not provide "
+                           "this value to verify against.")
 
     if expected == found:
         return FieldResult(field, expected, found, MATCH, 1.0, "Exact match.")
@@ -243,11 +245,12 @@ def match_abv(expected: str, found_abv: float | None,
 
     if exp is None:
         # No application value to compare against. If the OCR still read an ABV
-        # off the label, treat the field as verified (present on the label);
-        # otherwise it's genuinely absent.
+        # off the label, flag a mismatch (the application is missing a value the
+        # label states); otherwise it's genuinely absent.
         if found_abv is not None or found_proof is not None:
-            return FieldResult(field, "", found_display, ASSUMED, 1.0,
-                               "Read from the label; not given in the application to verify against.")
+            return FieldResult(field, "", found_display, MISMATCH, 0.0,
+                               "Found on the label, but the application did not provide "
+                               "this value to verify against.")
         return FieldResult(field, "", "", NOT_FOUND, 0.0,
                            "No application value provided and none found on the label.")
     if found_abv is None and found_proof is None:
@@ -362,10 +365,11 @@ def match_net_contents(expected: str, found: str,
     display_found = found or (label_text if full_text is None else "")
 
     if not expected:
-        # Blank in the form: verified if the OCR read a volume, else absent.
+        # Blank in the form: mismatch if the OCR read a volume, else absent.
         if label_vols:
-            return FieldResult(field, "", display_found, ASSUMED, 1.0,
-                               "Read from the label; not given in the application to verify against.")
+            return FieldResult(field, "", display_found, MISMATCH, 0.0,
+                               "Found on the label, but the application did not provide "
+                               "this value to verify against.")
         return FieldResult(field, "", display_found, NOT_FOUND, 0.0,
                            "No application value provided and none found on the label.")
 
@@ -418,9 +422,9 @@ def match_net_contents(expected: str, found: str,
 # name, its uppercase postal abbreviation, or a spelling of USA on the label —
 # that is how a domestic product states origin (an address ending in a state, or
 # "Product of USA"). A foreign value is matched by its country name. A blank form
-# value is surfaced as "assumed" when the label carries an origin statement, and
-# "not found" otherwise (read via app.extraction so a place name inside the brand
-# is ignored).
+# value is surfaced as a "mismatch" when the label carries an origin statement
+# (the application is missing a value the label states), and "not found" otherwise
+# (read via app.extraction so a place name inside the brand is ignored).
 # --------------------------------------------------------------------------- #
 
 def _display_origin(value: str) -> str:
@@ -438,10 +442,11 @@ def match_country_of_origin(expected: str, full_text: str,
     found_disp = _display_origin(found_on_label)
 
     if not expected:
-        # Blank in the form: assumed if the OCR read an origin statement, else absent.
+        # Blank in the form: mismatch if the OCR read an origin statement, else absent.
         if found_on_label:
-            return FieldResult(field, "", found_disp, ASSUMED, 1.0,
-                               "Read from the label; not given in the application to verify against.")
+            return FieldResult(field, "", found_disp, MISMATCH, 0.0,
+                               "Found on the label, but the application did not provide "
+                               "this value to verify against.")
         return FieldResult(field, "", "", NOT_FOUND, 0.0,
                            "No application value provided and no origin statement found "
                            "on the label.")

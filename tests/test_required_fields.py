@@ -24,10 +24,10 @@ def test_country_of_origin_mismatch():
     assert "france" in r.found.lower()                # surfaces what the label actually shows
 
 
-def test_country_of_origin_blank_but_on_label_is_assumed():
-    # Not in the form but read off the label -> "assumed" (yellow), not "missing".
+def test_country_of_origin_blank_but_on_label_is_mismatch():
+    # Not in the form but read off the label -> "mismatch", not "missing".
     r = match_country_of_origin("", LABEL)
-    assert r.verdict == "assumed"
+    assert r.verdict == "mismatch"
     assert "france" in r.found.lower()
 
 
@@ -52,10 +52,10 @@ def test_trailing_state_abbreviation_uppercase():
     assert r.verdict == "match"
 
 
-def test_trailing_state_blank_form_is_assumed():
+def test_trailing_state_blank_form_is_mismatch():
     label = "Bottled by Matello, Gaston, Oregon\n"
     r = match_country_of_origin("", label)
-    assert r.verdict == "assumed"
+    assert r.verdict == "mismatch"
     assert r.found == "USA"            # state dropped from the display
 
 

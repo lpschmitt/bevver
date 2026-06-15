@@ -76,10 +76,10 @@ class VerificationResult:
         verdicts = [f.verdict for f in self.fields]
         warning_verdict = self.warning.get("verdict", "not_found")
         all_verdicts = verdicts + [warning_verdict]
-        # "Not applicable" (not required for the class) and "assumed" (read off
-        # the label but not given in the form to verify against) are informational
-        # — they don't count for or against the score.
-        applicable = [v for v in all_verdicts if v not in ("not_applicable", "assumed")]
+        # "Not applicable" (not required for the class) is informational — it
+        # doesn't count for or against the score. A value present on the label but
+        # absent from the application now counts as a mismatch (it is not excluded).
+        applicable = [v for v in all_verdicts if v != "not_applicable"]
         verified = sum(1 for v in applicable if v in ("match", "match_normalized"))
         total = len(applicable)
         needs_review = total - verified
