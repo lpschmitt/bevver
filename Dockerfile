@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/tmp/hf \
     OCR_BACKEND=gemini
 
 WORKDIR /app
@@ -25,7 +24,8 @@ COPY scripts/ ./scripts/
 COPY test_images/ ./test_images/
 COPY Reference/ ./Reference/
 
-# HuggingFace Spaces routes to port 7860; default uvicorn elsewhere can override.
+# Default port for local runs; Railway (and other hosts) inject their own $PORT,
+# which the CMD binds to.
 ENV PORT=7860
 EXPOSE 7860
 

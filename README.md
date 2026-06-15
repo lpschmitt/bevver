@@ -1,13 +1,3 @@
----
-title: TTB Label Verifier
-emoji: 🧾
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # TTB Alcohol Label Verification Prototype
 
 A prototype of the core daily task of a TTB compliance agent: **verify a beverage
@@ -278,21 +268,23 @@ The 30 test labels are bundled in `test_images/`, so no fetch step is required
 pytest
 ```
 
-### Deployed
+### Deployed (Railway)
 
-- **HuggingFace Spaces (Docker SDK).** The frontmatter at the top of this README
-  is the Space config (`sdk: docker`, `app_port: 7860`).
-- **Deployed URL:** _add your Space URL here._
-- Note: free Spaces sleep after ~48 h idle — open the link once to wake it
-  before sharing.
+[Railway](https://railway.app) builds the `Dockerfile` and runs the container,
+injecting a `$PORT` the app already binds to (`uvicorn … --port ${PORT}`), so no
+extra config file is needed.
+
+- **Deployed URL:** _add your Railway URL here._
 
 #### Deploy steps
-1. Create a new Space → SDK: **Docker**.
-2. Push this repository to the Space (it contains the `Dockerfile`, app code, and
-   the bundled `test_images/` so the demo works out of the box).
-3. Set `GEMINI_API_KEY` as a Space secret (the Gemini reader is the default; or
+1. Create a new Railway project → **Deploy from GitHub repo** (or run `railway up`
+   from the repo). Railway auto-detects the `Dockerfile`.
+2. The image bundles the app code and the sample `test_images/`, so the demo works
+   out of the box.
+3. Add a `GEMINI_API_KEY` service variable (the Gemini reader is the default; or
    set `OCR_BACKEND=paddle` for a fully self-contained, offline build).
-4. The Space builds the container and serves on port 7860.
+4. Railway builds the container, injects `PORT`, and serves the app on its
+   generated domain.
 
 ---
 
